@@ -1,0 +1,10 @@
+domains:
+  - taskloom
+node_version: "22"
+secured: true
+proxy:
+  command: npm run dev
+  port: 3000
+services:
+  - mongo
+  - rustfs
