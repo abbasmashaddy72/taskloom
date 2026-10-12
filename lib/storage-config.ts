@@ -29,21 +29,36 @@ export function storageSettings(env: StorageEnvironment = process.env): StorageS
   const accessKeyId = env.AWS_ACCESS_KEY_ID?.trim() || undefined;
   const secretAccessKey = env.AWS_SECRET_ACCESS_KEY?.trim() || undefined;
   if (Boolean(accessKeyId) !== Boolean(secretAccessKey)) {
-    throw new StorageConfigurationError('Set both AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY, or neither when using an IAM role.');
+    throw new StorageConfigurationError(
+      'Set both AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY, or neither when using an IAM role.',
+    );
   }
 
   const rawEndpoint = (env.TASKLOOM_S3_ENDPOINT || env.AWS_ENDPOINT || env.S3_ENDPOINT || '').trim();
   let endpoint: string | undefined;
   if (rawEndpoint) {
     let url: URL;
-    try { url = new URL(rawEndpoint); }
-    catch { throw new StorageConfigurationError('AWS_ENDPOINT must be an absolute HTTP(S) URL.'); }
-    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.search || url.hash) {
-      throw new StorageConfigurationError('AWS_ENDPOINT must be an HTTP(S) S3 API URL without credentials, query parameters, or fragments.');
+    try {
+      url = new URL(rawEndpoint);
+    } catch {
+      throw new StorageConfigurationError('AWS_ENDPOINT must be an absolute HTTP(S) URL.');
+    }
+    if (
+      !['http:', 'https:'].includes(url.protocol) ||
+      url.username ||
+      url.password ||
+      url.search ||
+      url.hash
+    ) {
+      throw new StorageConfigurationError(
+        'AWS_ENDPOINT must be an HTTP(S) S3 API URL without credentials, query parameters, or fragments.',
+      );
     }
     // RustFS uses the S3 API root. A bucket name in the base path makes AWS SDK sign the wrong URI.
     if (/(^|\.)rustfs\.test$/i.test(url.hostname) && url.pathname !== '/') {
-      throw new StorageConfigurationError('RustFS AWS_ENDPOINT must be the S3 API root (for example https://rustfs.test), without a bucket or /insure360 path. Set AWS_BUCKET separately.');
+      throw new StorageConfigurationError(
+        'RustFS AWS_ENDPOINT must be the S3 API root (for example https://rustfs.test), without a bucket or /insure360 path. Set AWS_BUCKET separately.',
+      );
     }
     endpoint = url.toString().replace(/\/$/, '');
   }
@@ -52,7 +67,8 @@ export function storageSettings(env: StorageEnvironment = process.env): StorageS
     bucket,
     region,
     ...(endpoint ? { endpoint } : {}),
-    forcePathStyle: (env.AWS_USE_PATH_STYLE_ENDPOINT || env.S3_FORCE_PATH_STYLE || '').toLowerCase() === 'true',
+    forcePathStyle:
+      (env.AWS_USE_PATH_STYLE_ENDPOINT || env.S3_FORCE_PATH_STYLE || '').toLowerCase() === 'true',
     ...(accessKeyId && secretAccessKey ? { accessKeyId, secretAccessKey } : {}),
     ...(env.AWS_SESSION_TOKEN?.trim() ? { sessionToken: env.AWS_SESSION_TOKEN.trim() } : {}),
   };

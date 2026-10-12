@@ -105,11 +105,14 @@ export type Snapshot = {
 export type ImportProject = {
   name: string;
   description: string;
-  lists: { title: string; tasks: {
+  lists: {
     title: string;
-    status: Status;
-    priority: Priority;
-    dueDate: string | null;
-    subtasks: { title: string; status: Status; dueDate: string | null }[];
-  }[] }[];
+    tasks: {
+      title: string;
+      status: Status;
+      priority: Priority;
+      dueDate: string | null;
+      subtasks: { title: string; status: Status; dueDate: string | null }[];
+    }[];
+  }[];
 };

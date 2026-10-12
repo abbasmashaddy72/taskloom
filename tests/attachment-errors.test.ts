@@ -33,10 +33,11 @@ test('nonexistent bucket is surfaced explicitly', () => {
   assert.equal(storageFailure(error).code, 'S3_BUCKET_NOT_FOUND');
 });
 
-
 test('nested DNS and TCP connection errors get actionable responses', () => {
   for (const code of ['ENOTFOUND', 'ECONNREFUSED', 'EAI_AGAIN']) {
-    const error = new Error('Sensitive endpoint must not be returned', { cause: Object.assign(new Error('connect'), { code }) });
+    const error = new Error('Sensitive endpoint must not be returned', {
+      cause: Object.assign(new Error('connect'), { code }),
+    });
     assert.equal(storageFailure(error).code, 'S3_CONNECTION_FAILED');
     assert.equal(storageErrorDiagnostics(error).causeCode, code);
     assert.ok(!JSON.stringify(storageErrorDiagnostics(error)).includes('Sensitive endpoint'));

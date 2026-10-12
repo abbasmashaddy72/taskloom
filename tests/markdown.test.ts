@@ -44,7 +44,6 @@ test('rejects blank or invalid inputs', () => {
   assert.throws(() => parseMarkdown('# Project: Empty'), /No tasks/);
 });
 
-
 test('ignores impossible due dates and enforces the import size limit', () => {
   const p = parseMarkdown('- [ ] Test | due:2026-02-31');
   assert.equal(p.lists[0].tasks[0].dueDate, null);

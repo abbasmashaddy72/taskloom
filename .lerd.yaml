@@ -3,7 +3,7 @@
 domains:
   - taskloom
 secured: true
-node_version: "22"
+node_version: '22'
 proxy:
   command: npm run dev
   port: 3000

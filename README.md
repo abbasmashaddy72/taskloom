@@ -25,16 +25,16 @@
 
 ## Technical design
 
-| Layer | Implementation |
-| --- | --- |
-| Frontend | Next.js 16 App Router + React 19 + TypeScript |
-| Design system | Tailwind CSS 4 + custom theme tokens + Lucide |
+| Layer          | Implementation                                                              |
+| -------------- | --------------------------------------------------------------------------- |
+| Frontend       | Next.js 16 App Router + React 19 + TypeScript                               |
+| Design system  | Tailwind CSS 4 + custom theme tokens + Lucide                               |
 | Data mutations | **Next.js Server Actions** (same app process, no separate Express/REST API) |
-| Data access | Official MongoDB Node.js driver 7 |
-| Storage | Lerd-managed MongoDB; optional private S3 for attachments |
-| Auth | Not included; intended strictly for private localhost use |
+| Data access    | Official MongoDB Node.js driver 7                                           |
+| Storage        | Lerd-managed MongoDB; optional private S3 for attachments                   |
+| Auth           | Not included; intended strictly for private localhost use                   |
 
-**Important:** A browser cannot connect directly to MongoDB securely. Next.js therefore executes database access server-side, in the *same local application process*. **Node.js is still required as the Next.js runtime**; it is not an external API provider. MongoDB is never accessed directly by React in the browser. Attachment APIs are provided by the local Next.js server; AWS credentials stay on the server; file downloads use short-lived signed URLs.
+**Important:** A browser cannot connect directly to MongoDB securely. Next.js therefore executes database access server-side, in the _same local application process_. **Node.js is still required as the Next.js runtime**; it is not an external API provider. MongoDB is never accessed directly by React in the browser. Attachment APIs are provided by the local Next.js server; AWS credentials stay on the server; file downloads use short-lived signed URLs.
 
 ## Start locally using Lerd (Arch / CachyOS)
 
@@ -64,11 +64,13 @@ The `.env.local` connection string uses the Lerd MongoDB host port, root develop
 
 ## Markdown format
 
-````md
+```md
 # Project: Insure360
+
 > Task tracking and quality improvement
 
 ## List: Foundation
+
 - [ ] T1 Push current code to Git | priority:high | due:2026-10-15
   - [x] Check the remote
   - [ ] Create a commit
@@ -76,19 +78,20 @@ The `.env.local` connection string uses the Lerd MongoDB host port, root develop
 - [!] T3 Waiting on access
 
 ## List: Releases
+
 - [?] Investigate failing deployment
 - [x] Document the release
-````
+```
 
 The status mapping is:
 
-| Markdown checkbox | Status |
-| --- | --- |
-| `- [ ]` | Pending |
+| Markdown checkbox  | Status      |
+| ------------------ | ----------- |
+| `- [ ]`            | Pending     |
 | `- [-]` or `- [/]` | In Progress |
-| `- [!]` | Blocked |
-| `- [x]` | Completed |
-| `- [?]` | Failed |
+| `- [!]`            | Blocked     |
+| `- [x]`            | Completed   |
+| `- [?]`            | Failed      |
 
 - `# Project: Name` defines the project; `## List: Name` defines each task list.
 - Indent **two or more spaces** to create a subtask (one level of nesting).
@@ -128,9 +131,49 @@ scripts/seed.ts       Optional sample content
 tests/markdown.test.ts  Markdown unit tests
 ```
 
+## Consistent formatting — Prettier, Tailwind CSS v4 and ESLint
+
+Taskloom uses **Prettier 3** as the single formatter for TypeScript, TSX, JavaScript, CSS, JSON, YAML and documentation Markdown. The Tailwind plugin sorts utility classes using `app/globals.css` (Tailwind v4). `eslint-config-prettier` prevents ESLint style rules from fighting Prettier. ESLint still checks code quality, TypeScript performs static checking, and tests/build remain separate acceptance gates.
+
+After applying this source, install dev dependencies once to update the lockfile:
+
+```sh
+npm install
+```
+
+Run the formatter on every supported project file:
+
+```sh
+npm run format
+```
+
+To verify formatting in CI or without changing files:
+
+```sh
+npm run format:check
+```
+
+To format only specific files (paths are relative to the project root):
+
+```sh
+npm run format:files -- components/editors.tsx app/globals.css
+```
+
+For optional lint autofixes and the full quality check:
+
+```sh
+npm run lint:fix
+npm run quality:check
+```
+
+The default formatting is 2 spaces, single quotes in JS/TS, semicolons, LF newlines, 110-character preferred print width, and Tailwind class sorting. `.prettierignore` deliberately skips dependencies, generated code (`next-env.d.ts`), lockfiles, local environments, immutable historical checkpoints and raw Markdown import fixtures. `.env.example` is not supported by Prettier's built-in parsers and should be edited manually.
+
+VS Code users can install the recommended Prettier/ESLint/Tailwind extensions to enable **format on save**. Formatting is intentionally independent of `eslint --fix` to avoid surprising changes during format-only runs. On first use, review the diff before committing; Prettier may reflow long JSX and CSS even though behavior should remain unchanged.
+
 ## Verification commands
 
 ```sh
+npm run format:check
 npm run typecheck
 npm run lint
 npm test
@@ -171,7 +214,6 @@ The app deliberately does **not** include cloud sync, third-party APIs, push not
 ## Attachments and Markdown export
 
 Markdown exports include task/subtask structure but **do not embed S3 file bytes**; downloaded attachments must be backed up separately from the private bucket. Imported Markdown does not restore attachments.
-
 
 ## CP-014 — Imports, rollback, cross-project links and searchable menus
 

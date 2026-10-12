@@ -53,7 +53,7 @@ The first `lerd link` may ask for approval before running the project-defined co
 
 ## Connection string
 
-Because **Next.js runs on the host** with `proxy.command: npm run dev` and `proxy.port: 3000`, it connects to the Lerd MongoDB *host* endpoint:
+Because **Next.js runs on the host** with `proxy.command: npm run dev` and `proxy.port: 3000`, it connects to the Lerd MongoDB _host_ endpoint:
 
 ```dotenv
 MONGODB_URI=mongodb://root:lerd@127.0.0.1:27017/taskloom?authSource=admin

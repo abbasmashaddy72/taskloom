@@ -79,7 +79,6 @@ The patch has been syntax-parsed using installed TypeScript compiler APIs. The c
 
 Run `npm run s3:check` after updating `.env` or `.env.local` to verify bucket access and full object round-trip. If a probe returns HTML, inspect whether `rustfs.test` is routed to a management console or web interface instead of the S3 API endpoint (normally TCP 9000). Verify TLS trust and service state before relaxing any certificate checks; do not set `NODE_TLS_REJECT_UNAUTHORIZED=0`.
 
-
 ## Lerd host-managed Node: prevent Docker-only S3 endpoints (CP-013)
 
 Lerd can inject `AWS_ENDPOINT=http://lerd-rustfs:9000` and `AWS_URL=http://localhost:9000` into a host-managed Node site. `lerd-rustfs` may be resolvable **only inside Lerd's container network**, so host-run Next.js can fail with HTTP 502 on `PutObject`. As process-injected `AWS_ENDPOINT` can override `.env.local`, use an application-specific setting:

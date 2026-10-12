@@ -1,7 +1,7 @@
-# Current checkpoint: CP-017
+# Taskloom checkpoint
 
-Taskloom CP-017 preserves CP-016 functionality and adds nested task/subtask editors, styled confirmations, explicit heading-deletion choices and optional subtask detail display.
+Current: **CP-019 — Prettier + Tailwind CSS v4 class formatting integration**.
 
-See `CHECKPOINT_CP017.md` and `docs/DIALOGS_AND_SUBTASKS_CP017.md`.
+Run `npm install`, `npm run format`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run build` locally.
 
-Local acceptance tests (Next.js build, actual browser and MongoDB/RustFS) remain pending.
+Previous: [CP-018](CHECKPOINT_CP018.md). See [CP-019](CHECKPOINT_CP019.md) and [formatting guide](docs/FORMATTING_CP019.md).

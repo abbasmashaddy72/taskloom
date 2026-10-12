@@ -6,17 +6,27 @@ import { storageFailure } from '../lib/attachment-errors';
 const base = { AWS_BUCKET: 'taskloom', AWS_DEFAULT_REGION: 'us-east-1' };
 
 test('accepts RustFS root endpoint using path-style addressing', () => {
-  const result = storageSettings({ ...base, AWS_ENDPOINT: 'https://rustfs.test', AWS_USE_PATH_STYLE_ENDPOINT: 'true' });
+  const result = storageSettings({
+    ...base,
+    AWS_ENDPOINT: 'https://rustfs.test',
+    AWS_USE_PATH_STYLE_ENDPOINT: 'true',
+  });
   assert.equal(result.endpoint, 'https://rustfs.test');
   assert.equal(result.forcePathStyle, true);
 });
 
 test('rejects RustFS endpoint containing a bucket prefix', () => {
-  assert.throws(() => storageSettings({ ...base, AWS_ENDPOINT: 'https://rustfs.test/insure360' }), StorageConfigurationError);
+  assert.throws(
+    () => storageSettings({ ...base, AWS_ENDPOINT: 'https://rustfs.test/insure360' }),
+    StorageConfigurationError,
+  );
 });
 
 test('rejects accidental credentials inside S3 URLs', () => {
-  assert.throws(() => storageSettings({ ...base, AWS_ENDPOINT: 'https://secret:password@rustfs.test' }), StorageConfigurationError);
+  assert.throws(
+    () => storageSettings({ ...base, AWS_ENDPOINT: 'https://secret:password@rustfs.test' }),
+    StorageConfigurationError,
+  );
 });
 
 test('requires either both static credentials or neither', () => {
@@ -28,7 +38,6 @@ test('maps configuration errors to actionable 503', () => {
   assert.equal(result.status, 503);
   assert.equal(result.code, 'S3_CONFIGURATION_INVALID');
 });
-
 
 test('explicit host endpoint takes precedence over Lerd container-only AWS_ENDPOINT', () => {
   const settings = storageSettings({

@@ -8,10 +8,15 @@
     "start": "next start -H ${HOST:-127.0.0.1} -p ${PORT:-3000}",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "tsx --test tests/*.test.ts && node --test tests/import-workflows.mjs",
+    "test": "tsx --test tests/*.test.ts && node --test tests/import-workflows.mjs tests/format-config.test.mjs",
     "test:imports": "node --test tests/import-workflows.mjs",
     "seed": "tsx scripts/seed.ts",
-    "s3:check": "node scripts/check-s3.mjs"
+    "s3:check": "node scripts/check-s3.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "format:files": "prettier --write",
+    "lint:fix": "eslint . --fix",
+    "quality:check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build"
   },
   "dependencies": {
     "dotenv": "^16.6.1",
@@ -30,7 +35,10 @@
     "@types/react-dom": "^19.0.0",
     "eslint": "^9.0.0",
     "eslint-config-next": "^16.0.0",
+    "eslint-config-prettier": "10.1.8",
     "postcss": "^8.5.0",
+    "prettier": "3.9.10",
+    "prettier-plugin-tailwindcss": "0.8.1",
     "tailwindcss": "^4.1.0",
     "tsx": "^4.20.0",
     "typescript": "^5.9.0"

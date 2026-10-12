@@ -14,13 +14,13 @@ The original Insure360 checklist is accepted **without editing the Markdown**. P
 
 ## Import modes
 
-| Mode | What changes | Undo behavior |
-| --- | --- | --- |
-| Append | Adds items and creates missing headings; reuses existing headings with the same case-insensitive title | Removes the newly imported items and headings only if they remain unchanged |
+| Mode                      | What changes                                                                                                  | Undo behavior                                                                                           |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Append                    | Adds items and creates missing headings; reuses existing headings with the same case-insensitive title        | Removes the newly imported items and headings only if they remain unchanged                             |
 | Replace matching headings | Replaces subtasks in headings with matching names, preserves all unmatched sections and adds missing headings | Restores archived subtasks and removes generated items/headings only if no incompatible edits were made |
-| Replace all | Replaces all headings and subtasks under the parent task | Restores archived subtasks, headings, document title, introduction and verification notes |
+| Replace all               | Replaces all headings and subtasks under the parent task                                                      | Restores archived subtasks, headings, document title, introduction and verification notes               |
 
-After import, open **Import history** to undo a recorded import. Undo refuses to remove imported sections or subtasks when their contents have changed, or when new subtasks have been added to headings owned by the import. The operation also protects imported project/list contents and their archival references. **Undo of a batch created prior to CP-016 follows the legacy rules**, and old flat subtasks remain visible as *Uncategorised*.
+After import, open **Import history** to undo a recorded import. Undo refuses to remove imported sections or subtasks when their contents have changed, or when new subtasks have been added to headings owned by the import. The operation also protects imported project/list contents and their archival references. **Undo of a batch created prior to CP-016 follows the legacy rules**, and old flat subtasks remain visible as _Uncategorised_.
 
 ## Markdown syntax
 
@@ -30,10 +30,12 @@ After import, open **Import history** to undo a recorded import. Undo refuses to
 **Status:** `[ ]` Pending · `[x]` Verified
 
 ## List: Central Administration
+
 - [ ] **T1** Improve tenant widgets.
 - [-] **T2** Review administration.
 
 ## List: Communications
+
 - [!] **T3** Fix SMS provider failure.
 
 ## Verification Notes
@@ -45,7 +47,7 @@ Record verification results here. Do not mark tasks completed before verificatio
 - Checkboxes map `[ ]` Pending, `[x]` Completed, `[-]` In Progress, `[!]` Blocked, `[?]` Failed. Due-date metadata (` | due:YYYY-MM-DD`) continues to work.
 - The document's `# Title`, status legend or other pre-section text, and `## Verification Notes` text are stored separately and shown in the task's Subtasks area.
 - Inline backticks and `**T1**` formatting are normalized for display; the original Markdown row is saved as subtask details where formatting or length requires it.
-- Subtask titles remain ≤160 characters. For longer imported lines, the display title is shortened at a word boundary with an ellipsis, and the full original text is stored in the subtask's *Details* field (up to 5,000 characters).
+- Subtask titles remain ≤160 characters. For longer imported lines, the display title is shortened at a word boundary with an ellipsis, and the full original text is stored in the subtask's _Details_ field (up to 5,000 characters).
 - Subtasks outside a named heading appear in **Uncategorised**.
 - Empty headings alongside an otherwise valid checklist are allowed. Duplicate section titles, ignoring case, are rejected before any database changes.
 

@@ -9,7 +9,11 @@ export function writeFromSameOrigin(request: NextRequest): boolean {
   if (!origin) return false;
   try {
     const url = new URL(origin);
-    const hosts = [request.headers.get('host'), request.headers.get('x-forwarded-host'), request.nextUrl.host];
+    const hosts = [
+      request.headers.get('host'),
+      request.headers.get('x-forwarded-host'),
+      request.nextUrl.host,
+    ];
     return ['http:', 'https:'].includes(url.protocol) && hosts.includes(url.host);
   } catch {
     return false;

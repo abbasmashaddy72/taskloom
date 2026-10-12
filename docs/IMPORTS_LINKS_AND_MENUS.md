@@ -14,11 +14,11 @@ The same editor also supports **Linked tasks across projects**, a relation betwe
 
 Navigate to **Import Markdown**, paste a checklist or upload a Markdown file, and choose a destination:
 
-| Mode | Behavior |
-| --- | --- |
-| Create a new project | Creates its own project/lists/tasks/subtasks and records an undo batch |
-| Add new lists | Appends imported lists to an existing project; never replaces existing lists |
-| Replace one selected list | Keep the selected list's identity; replace its tasks with all imported task sections combined |
+| Mode                        | Behavior                                                                                        |
+| --------------------------- | ----------------------------------------------------------------------------------------------- |
+| Create a new project        | Creates its own project/lists/tasks/subtasks and records an undo batch                          |
+| Add new lists               | Appends imported lists to an existing project; never replaces existing lists                    |
+| Replace one selected list   | Keep the selected list's identity; replace its tasks with all imported task sections combined   |
 | Replace matching list names | Case-insensitive, trimmed match against existing list titles; replace matched lists, add others |
 
 The preview displays imported list/task counts and (for replacement) affected existing list/task/subtask/attachment-reference counts. Replacement always requires a confirmation prompt. The server rejects unknown projects/lists, duplicate matching headers, invalid titles, and unparseable input **before** deleting any old data.
@@ -43,7 +43,7 @@ Choose Append (default) or **Replace existing subtasks**. Nested checkbox rows a
 
 The **Import history** sidebar item displays the latest 100 batches. Undo is offered only for status `applied`. It checks for changes to the imported lists, tasks, and subtasks, newer work added to an imported/replaced list or imported project, attached files on imported tasks, new task or project links, deleted external targets, and other conflicts. Undo is denied before any deletion if one of those checks fails.
 
-For replacement operations, the original tasks, subtasks, attachment *metadata*, project shortcuts, and task links are stored in the batch snapshot. S3 object bytes are not copied; the original S3 objects are retained as long as the undo archive exists. After undo, metadata is restored using original MongoDB document IDs.
+For replacement operations, the original tasks, subtasks, attachment _metadata_, project shortcuts, and task links are stored in the batch snapshot. S3 object bytes are not copied; the original S3 objects are retained as long as the undo archive exists. After undo, metadata is restored using original MongoDB document IDs.
 
 **Caveats:**
 

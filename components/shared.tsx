@@ -1,7 +1,18 @@
 'use client';
 
 import { cloneElement, isValidElement, useEffect, useId, type ReactNode, type ReactElement } from 'react';
-import { AlertCircle, AlertTriangle, CalendarDays, Check, Circle, CircleAlert, Clock3, LoaderCircle, ShieldAlert, X } from 'lucide-react';
+import {
+  AlertCircle,
+  AlertTriangle,
+  CalendarDays,
+  Check,
+  Circle,
+  CircleAlert,
+  Clock3,
+  LoaderCircle,
+  ShieldAlert,
+  X,
+} from 'lucide-react';
 import type { Status } from '@/lib/types';
 
 export const statusInfo: Record<Status, { label: string; color: string; bg: string }> = {
@@ -12,28 +23,94 @@ export const statusInfo: Record<Status, { label: string; color: string; bg: stri
   failed: { label: 'Failed', color: '#e27182', bg: '#e271821b' },
 };
 export const statusIcons = {
-  pending: Circle, in_progress: LoaderCircle, blocked: ShieldAlert, completed: Check, failed: CircleAlert,
+  pending: Circle,
+  in_progress: LoaderCircle,
+  blocked: ShieldAlert,
+  completed: Check,
+  failed: CircleAlert,
 };
 export function StatusIcon({ status, size = 17 }: { status: Status; size?: number }) {
   const Icon = statusIcons[status];
-  return <Icon size={size} style={{ color: statusInfo[status].color }} strokeWidth={status === 'completed' ? 2.6 : 2} />;
+  return (
+    <Icon
+      size={size}
+      style={{ color: statusInfo[status].color }}
+      strokeWidth={status === 'completed' ? 2.6 : 2}
+    />
+  );
 }
 export function StatusBadge({ status, small = false }: { status: Status; small?: boolean }) {
   const info = statusInfo[status];
-  return <span className="inline-flex items-center gap-1.5 rounded-lg font-semibold" style={{ color: info.color, background: info.bg, padding: small ? '3px 7px' : '5px 9px', fontSize: small ? 10 : 11 }}><span className="status-dot" style={{ background: info.color }} />{info.label}</span>;
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-lg font-semibold"
+      style={{
+        color: info.color,
+        background: info.bg,
+        padding: small ? '3px 7px' : '5px 9px',
+        fontSize: small ? 10 : 11,
+      }}
+    >
+      <span className="status-dot" style={{ background: info.color }} />
+      {info.label}
+    </span>
+  );
 }
 export function DueDate({ value, compact = false }: { value: string | null; compact?: boolean }) {
   if (!value) return null;
   const d = new Date(`${value}T12:00:00`);
-  const today = new Date(); today.setHours(0,0,0,0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
   const overdue = d.getTime() < today.getTime();
-  return <span className={`inline-flex items-center gap-1 ${overdue ? 'date-overdue' : 'muted'}`} title={overdue ? 'Overdue' : 'Due date'}><CalendarDays size={compact ? 12 : 14}/>{d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', ...(d.getFullYear() !== today.getFullYear() ? { year: 'numeric' } : {}) })}</span>;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 ${overdue ? 'date-overdue' : 'muted'}`}
+      title={overdue ? 'Overdue' : 'Due date'}
+    >
+      <CalendarDays size={compact ? 12 : 14} />
+      {d.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        ...(d.getFullYear() !== today.getFullYear() ? { year: 'numeric' } : {}),
+      })}
+    </span>
+  );
 }
-export function ProgressBar({ value, color, height = 7 }: { value: number; color?: string; height?: number }) {
-  return <div className="progress-track" style={{ height }}><div className="progress-fill" style={{ width: `${Math.max(0, Math.min(100, value))}%`, ...(color ? { background: color } : {}) }} /></div>;
+export function ProgressBar({
+  value,
+  color,
+  height = 7,
+}: {
+  value: number;
+  color?: string;
+  height?: number;
+}) {
+  return (
+    <div className="progress-track" style={{ height }}>
+      <div
+        className="progress-fill"
+        style={{ width: `${Math.max(0, Math.min(100, value))}%`, ...(color ? { background: color } : {}) }}
+      />
+    </div>
+  );
 }
-export function IconTile({ children, color = '#7769e8', size = 42 }: { children: ReactNode; color?: string; size?: number }) {
-  return <span className="inline-flex shrink-0 items-center justify-center rounded-xl" style={{ color, background: `${color}17`, height:size, width:size }}>{children}</span>;
+export function IconTile({
+  children,
+  color = '#7769e8',
+  size = 42,
+}: {
+  children: ReactNode;
+  color?: string;
+  size?: number;
+}) {
+  return (
+    <span
+      className="inline-flex shrink-0 items-center justify-center rounded-xl"
+      style={{ color, background: `${color}17`, height: size, width: size }}
+    >
+      {children}
+    </span>
+  );
 }
 export type ConfirmationRequest = {
   title: string;
@@ -41,68 +118,216 @@ export type ConfirmationRequest = {
   confirmLabel: string;
   onConfirm: () => void;
   destructive?: boolean;
-  alternative?: {label: string; onConfirm: () => void};
+  alternative?: { label: string; onConfirm: () => void };
 };
 export type RequestConfirmation = (request: ConfirmationRequest) => void;
 
 /** Only the topmost dialog handles Escape. Backdrop clicks never dismiss a dialog. */
-export function Dialog({ title, subtitle, onClose, children, wide = false, active = true, layer = 100 }: { title: string; subtitle?: string; onClose: () => void; children: ReactNode; wide?: boolean; active?: boolean; layer?: number }) {
+export function Dialog({
+  title,
+  subtitle,
+  onClose,
+  children,
+  wide = false,
+  active = true,
+  layer = 100,
+}: {
+  title: string;
+  subtitle?: string;
+  onClose: () => void;
+  children: ReactNode;
+  wide?: boolean;
+  active?: boolean;
+  layer?: number;
+}) {
   useEffect(() => {
     if (!active) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { e.stopImmediatePropagation(); e.preventDefault(); onClose(); }
+      if (e.key === 'Escape') {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        onClose();
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [active, onClose]);
-  return <div className="modal-backdrop" role="presentation" aria-hidden={!active} inert={!active} style={{zIndex: layer, ...(layer >= 120 ? {background: 'rgba(14,15,29,.38)', backdropFilter: 'blur(2px)'} : {})}}>
-    <section className="modal" style={{ maxWidth: wide ? 640 : 520 }} role="dialog" aria-modal={active ? true : undefined} aria-label={title}>
-      <div className="flex items-start justify-between gap-3 px-6 pt-6 pb-4">
-        <div><h2 className="text-xl font-bold tracking-tight">{title}</h2>{subtitle && <p className="muted mt-1 text-sm">{subtitle}</p>}</div>
-        <button className="icon-btn" onClick={onClose} aria-label="Close dialog"><X size={18}/></button>
-      </div>
-      {children}
-    </section>
-  </div>;
+  return (
+    <div
+      className="modal-backdrop"
+      role="presentation"
+      aria-hidden={!active}
+      inert={!active}
+      style={{
+        zIndex: layer,
+        ...(layer >= 120 ? { background: 'rgba(14,15,29,.38)', backdropFilter: 'blur(2px)' } : {}),
+      }}
+    >
+      <section
+        className="modal"
+        style={{ maxWidth: wide ? 640 : 520 }}
+        role="dialog"
+        aria-modal={active ? true : undefined}
+        aria-label={title}
+      >
+        <div className="flex items-start justify-between gap-3 px-6 pt-6 pb-4">
+          <div>
+            <h2 className="text-xl font-bold tracking-tight">{title}</h2>
+            {subtitle && <p className="muted mt-1 text-sm">{subtitle}</p>}
+          </div>
+          <button className="icon-btn" onClick={onClose} aria-label="Close dialog">
+            <X size={18} />
+          </button>
+        </div>
+        {children}
+      </section>
+    </div>
+  );
 }
 /** Accessible, application-styled confirmation instead of window.confirm(). */
-export function ConfirmDialog({ request, onClose, loading = false }: {request: ConfirmationRequest; onClose: () => void; loading?: boolean}) {
-  return <Dialog title={request.title} onClose={onClose} layer={140}>
-    <div className="px-6 pb-6">
-      <div className="mb-4 flex items-start gap-3 rounded-xl border p-4 hairline" style={{background: request.destructive ? 'rgba(239, 68, 68, 0.055)' : 'var(--surface-2)'}}>
-        <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${request.destructive ? 'bg-red-500/10 text-red-500' : 'bg-amber-500/10 text-amber-500'}`}><AlertTriangle size={20}/></span>
-        <p className="min-w-0 whitespace-pre-wrap break-words pt-0.5 text-sm leading-relaxed">{request.description}</p>
+export function ConfirmDialog({
+  request,
+  onClose,
+  loading = false,
+}: {
+  request: ConfirmationRequest;
+  onClose: () => void;
+  loading?: boolean;
+}) {
+  return (
+    <Dialog title={request.title} onClose={onClose} layer={140}>
+      <div className="px-6 pb-6">
+        <div
+          className="hairline mb-4 flex items-start gap-3 rounded-xl border p-4"
+          style={{ background: request.destructive ? 'rgba(239, 68, 68, 0.055)' : 'var(--surface-2)' }}
+        >
+          <span
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${request.destructive ? 'bg-red-500/10 text-red-500' : 'bg-amber-500/10 text-amber-500'}`}
+          >
+            <AlertTriangle size={20} />
+          </span>
+          <p className="min-w-0 pt-0.5 text-sm leading-relaxed break-words whitespace-pre-wrap">
+            {request.description}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <button type="button" autoFocus className="btn" disabled={loading} onClick={onClose}>
+            Cancel
+          </button>
+          {request.alternative && (
+            <button type="button" className="btn" disabled={loading} onClick={request.alternative.onConfirm}>
+              {request.alternative.label}
+            </button>
+          )}
+          <button
+            type="button"
+            disabled={loading}
+            className={`btn ${request.destructive ? 'btn-danger-solid' : 'btn-primary'}`}
+            onClick={request.onConfirm}
+          >
+            {loading ? (
+              <LoaderCircle size={16} className="animate-spin" />
+            ) : request.destructive ? (
+              <AlertTriangle size={16} />
+            ) : (
+              <Check size={16} />
+            )}{' '}
+            {request.confirmLabel}
+          </button>
+        </div>
       </div>
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        <button type="button" autoFocus className="btn" disabled={loading} onClick={onClose}>Cancel</button>
-        {request.alternative && <button type="button" className="btn" disabled={loading} onClick={request.alternative.onConfirm}>{request.alternative.label}</button>}
-        <button type="button" disabled={loading} className={`btn ${request.destructive ? 'btn-danger-solid' : 'btn-primary'}`} onClick={request.onConfirm}>{loading ? <LoaderCircle size={16} className="animate-spin"/> : request.destructive ? <AlertTriangle size={16}/> : <Check size={16}/>} {request.confirmLabel}</button>
-      </div>
-    </div>
-  </Dialog>;
+    </Dialog>
+  );
 }
 
 export function FormField({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
   const generatedId = useId();
-  const native = isValidElement(children) && typeof children.type === 'string' && ['input', 'textarea', 'select'].includes(children.type);
-  const element = native ? children as ReactElement<{id?: string}> : null;
+  const native =
+    isValidElement(children) &&
+    typeof children.type === 'string' &&
+    ['input', 'textarea', 'select'].includes(children.type);
+  const element = native ? (children as ReactElement<{ id?: string }>) : null;
   const fieldId = element?.props.id || generatedId;
-  const field = element ? cloneElement(element, {id: fieldId}) : children;
+  const field = element ? cloneElement(element, { id: fieldId }) : children;
   // Do not wrap custom searchable controls or button groups inside <label>.
-  return <div className="block">{native ? <label htmlFor={fieldId} className="field-label">{label}</label> : <span className="field-label">{label}</span>}{field}{hint && <span className="muted mt-1 block text-xs">{hint}</span>}</div>;
+  return (
+    <div className="block">
+      {native ? (
+        <label htmlFor={fieldId} className="field-label">
+          {label}
+        </label>
+      ) : (
+        <span className="field-label">{label}</span>
+      )}
+      {field}
+      {hint && <span className="muted mt-1 block text-xs">{hint}</span>}
+    </div>
+  );
 }
-export function ModalFooter({ loading, onClose, submitLabel = 'Save changes' }: { loading: boolean; onClose: () => void; submitLabel?: string }) {
-  return <div className="mt-6 flex items-center justify-end gap-2 border-t px-6 py-4 hairline" style={{ background: 'var(--surface-2)', borderRadius: '0 0 20px 20px' }}>
-    <button type="button" className="btn" onClick={onClose}>Cancel</button>
-    <button type="submit" disabled={loading} className="btn btn-primary">{loading ? <LoaderCircle size={16} className="animate-spin"/> : <Check size={16}/>} {submitLabel}</button>
-  </div>;
+export function ModalFooter({
+  loading,
+  onClose,
+  submitLabel = 'Save changes',
+}: {
+  loading: boolean;
+  onClose: () => void;
+  submitLabel?: string;
+}) {
+  return (
+    <div
+      className="hairline mt-6 flex items-center justify-end gap-2 border-t px-6 py-4"
+      style={{ background: 'var(--surface-2)', borderRadius: '0 0 20px 20px' }}
+    >
+      <button type="button" className="btn" onClick={onClose}>
+        Cancel
+      </button>
+      <button type="submit" disabled={loading} className="btn btn-primary">
+        {loading ? <LoaderCircle size={16} className="animate-spin" /> : <Check size={16} />} {submitLabel}
+      </button>
+    </div>
+  );
 }
-export function ErrorHint({ message }: { message?: string }) { return message ? <p role="alert" className="mt-3 flex gap-2 rounded-lg bg-red-500/10 p-3 text-sm text-red-500"><AlertCircle size={17} className="shrink-0"/>{message}</p> : null; }
-export function EmptyMessage({ icon, title, description, action }: { icon: ReactNode; title: string; description: string; action?: ReactNode }) {
-  return <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed px-5 py-14 text-center hairline" style={{background:'var(--surface)'}}>
-    <div className="mb-4 rounded-2xl p-4" style={{background:'var(--accent-wash)', color:'var(--accent)'}}>{icon}</div>
-    <h3 className="font-bold">{title}</h3><p className="muted mt-1 max-w-xs text-sm leading-relaxed">{description}</p>
-    {action && <div className="mt-5">{action}</div>}
-  </div>;
+export function ErrorHint({ message }: { message?: string }) {
+  return message ? (
+    <p role="alert" className="mt-3 flex gap-2 rounded-lg bg-red-500/10 p-3 text-sm text-red-500">
+      <AlertCircle size={17} className="shrink-0" />
+      {message}
+    </p>
+  ) : null;
 }
-export function OverdueCount({ count }: {count:number}) { return count > 0 ? <span className="flex items-center gap-1 text-xs font-semibold text-red-400"><Clock3 size={13}/>{count} overdue</span> : null; }
+export function EmptyMessage({
+  icon,
+  title,
+  description,
+  action,
+}: {
+  icon: ReactNode;
+  title: string;
+  description: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div
+      className="hairline flex flex-col items-center justify-center rounded-2xl border border-dashed px-5 py-14 text-center"
+      style={{ background: 'var(--surface)' }}
+    >
+      <div
+        className="mb-4 rounded-2xl p-4"
+        style={{ background: 'var(--accent-wash)', color: 'var(--accent)' }}
+      >
+        {icon}
+      </div>
+      <h3 className="font-bold">{title}</h3>
+      <p className="muted mt-1 max-w-xs text-sm leading-relaxed">{description}</p>
+      {action && <div className="mt-5">{action}</div>}
+    </div>
+  );
+}
+export function OverdueCount({ count }: { count: number }) {
+  return count > 0 ? (
+    <span className="flex items-center gap-1 text-xs font-semibold text-red-400">
+      <Clock3 size={13} />
+      {count} overdue
+    </span>
+  ) : null;
+}
