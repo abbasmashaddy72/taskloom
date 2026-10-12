@@ -1,7 +1,9 @@
+# Taskloom: Next.js host-proxy site managed by Lerd.
+# Requires a Lerd release supporting `proxy` sites (v1.24+).
 domains:
   - taskloom
-node_version: "22"
 secured: true
+node_version: "22"
 proxy:
   command: npm run dev
   port: 3000

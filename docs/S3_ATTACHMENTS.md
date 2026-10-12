@@ -72,3 +72,40 @@ lerd open
 ## Validation note
 
 The patch has been syntax-parsed using installed TypeScript compiler APIs. The current artifact does **not** claim a successful `npm install`, Next.js build, S3 integration test, MongoDB test or browser acceptance test. These require your local dependencies and S3 bucket.
+
+## Lerd RustFS troubleshooting
+
+`AWS_ENDPOINT` must be the **S3 API root**, not a bucket URL. Example: `https://rustfs.test` rather than `https://rustfs.test/insure360`. Set the selected bucket in `AWS_BUCKET=taskloom`; the app supplies object keys. Lerd's default RustFS region is generally `us-east-1`, but inspect the actual RustFS configuration if customized.
+
+Run `npm run s3:check` after updating `.env` or `.env.local` to verify bucket access and full object round-trip. If a probe returns HTML, inspect whether `rustfs.test` is routed to a management console or web interface instead of the S3 API endpoint (normally TCP 9000). Verify TLS trust and service state before relaxing any certificate checks; do not set `NODE_TLS_REJECT_UNAUTHORIZED=0`.
+
+
+## Lerd host-managed Node: prevent Docker-only S3 endpoints (CP-013)
+
+Lerd can inject `AWS_ENDPOINT=http://lerd-rustfs:9000` and `AWS_URL=http://localhost:9000` into a host-managed Node site. `lerd-rustfs` may be resolvable **only inside Lerd's container network**, so host-run Next.js can fail with HTTP 502 on `PutObject`. As process-injected `AWS_ENDPOINT` can override `.env.local`, use an application-specific setting:
+
+```dotenv
+# .env.local — actual host-accessible S3 API URL, without bucket path
+TASKLOOM_S3_ENDPOINT=http://127.0.0.1:9000
+TASKLOOM_S3_BUCKET=lerd
+AWS_ACCESS_KEY_ID=lerd
+AWS_SECRET_ACCESS_KEY=lerdpassword
+AWS_DEFAULT_REGION=us-east-1
+AWS_USE_PATH_STYLE_ENDPOINT=true
+# Only if you separately created a taskloom bucket:
+# TASKLOOM_S3_BUCKET=taskloom
+```
+
+Keep the Lerd-provided AWS credentials, `AWS_BUCKET=lerd`, `AWS_DEFAULT_REGION=us-east-1`, and `AWS_USE_PATH_STYLE_ENDPOINT=true`. Taskloom deliberately uses `TASKLOOM_S3_ENDPOINT` before `AWS_ENDPOINT` and `TASKLOOM_S3_BUCKET` before `AWS_BUCKET`, while preserving the existing names for AWS production. `AWS_URL` is not automatically used as an S3 API endpoint because it may represent a public asset URL rather than the API listener.
+
+Validate connectivity from the **host**, not from a RustFS Docker container:
+
+```fish
+curl --max-time 5 -i http://127.0.0.1:9000/
+npm run s3:check
+systemctl --user restart lerd-app-taskloom.service
+```
+
+An XML S3 error (such as AccessDenied) from an unauthenticated curl request still indicates that the API listener responds. Connection refusal means that the port is not published to the host. `npm run s3:check` authenticates and tests HeadBucket, PutObject, GetObject and DeleteObject. If it reports `NoSuchBucket`, create the named bucket or keep `AWS_BUCKET=lerd` if that bucket exists. If it reports `SignatureDoesNotMatch`, verify region and credentials. Do not disable TLS verification or expose RustFS credentials in browser code.
+
+In local development, presigned downloads also use the configured endpoint; clients on **other machines** will not be able to open URLs containing `127.0.0.1`. For remote clients, use a host accessible to both Node and the browser, or add a server-side download proxy with authorization.

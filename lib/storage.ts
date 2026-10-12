@@ -4,31 +4,30 @@ import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } fro
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { getDb } from './mongodb';
 import { safeFilename } from './attachment-policy';
+import { storageSettings } from './storage-config';
 export { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS_PER_TASK, MAX_ATTACHMENTS_PER_REQUEST, permittedFilename, attachmentLabel } from './attachment-policy';
 
 export const objectKey = (taskId: string, filename: string) => `taskloom/tasks/${taskId}/${randomUUID()}-${safeFilename(filename)}`;
 
 function bucket() {
-  const value = process.env.AWS_BUCKET || process.env.S3_BUCKET;
-  if (!value || !region()) throw new Error('S3 is not configured. Set AWS_BUCKET and AWS_DEFAULT_REGION in .env.local.');
-  return value;
+  return storageSettings().bucket;
 }
-function region() {
-  return process.env.AWS_DEFAULT_REGION || process.env.S3_REGION || process.env.AWS_REGION;
-}
+
 let cached: S3Client | undefined;
 function s3() {
-  bucket();
   if (!cached) {
-    const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
-    const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
-    if (Boolean(accessKeyId) !== Boolean(secretAccessKey)) throw new Error('Both AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are required when using static credentials.');
-    const endpoint = process.env.AWS_ENDPOINT || process.env.S3_ENDPOINT;
+    const { region, endpoint, forcePathStyle, accessKeyId, secretAccessKey, sessionToken } = storageSettings();
     cached = new S3Client({
-      region: region(),
+      region,
       ...(endpoint ? { endpoint } : {}),
-      forcePathStyle: (process.env.AWS_USE_PATH_STYLE_ENDPOINT || process.env.S3_FORCE_PATH_STYLE) === 'true',
-      ...(accessKeyId && secretAccessKey ? { credentials: { accessKeyId, secretAccessKey, ...(process.env.AWS_SESSION_TOKEN ? { sessionToken: process.env.AWS_SESSION_TOKEN } : {}) } } : {}),
+      forcePathStyle,
+      ...(accessKeyId && secretAccessKey ? {
+        credentials: {
+          accessKeyId,
+          secretAccessKey,
+          ...(sessionToken ? { sessionToken } : {}),
+        },
+      } : {}),
     });
   }
   return cached;

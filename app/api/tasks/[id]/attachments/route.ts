@@ -2,7 +2,8 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { getDb } from '@/lib/mongodb';
 import { writeFromSameOrigin } from '@/lib/request-origin';
 import { oid } from '@/lib/data';
-import { storageFailure, validationFailure } from '@/lib/attachment-errors';
+import { storageErrorDiagnostics, storageFailure, validationFailure } from '@/lib/attachment-errors';
+import { storageSettings } from '@/lib/storage-config';
 import { attachmentLabel, MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS_PER_REQUEST, MAX_ATTACHMENTS_PER_TASK, objectKey, permittedFilename, removeObject, uploadObject } from '@/lib/storage';
 
 export const runtime = 'nodejs';
@@ -21,8 +22,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     }
     const task = await db.collection('tasks').findOne({ _id: oid(id) });
     if (!task) return NextResponse.json({ error: 'Task not found.' }, { status: 404 });
-    if (!(process.env.AWS_BUCKET || process.env.S3_BUCKET) || !(process.env.AWS_DEFAULT_REGION || process.env.S3_REGION || process.env.AWS_REGION)) {
-      return NextResponse.json({ code: 'S3_NOT_CONFIGURED', error: 'S3 attachments are not configured. Set AWS_BUCKET and AWS_DEFAULT_REGION in .env and restart Next.js.' }, { status: 503 });
+    try { storageSettings(); }
+    catch (error) {
+      const failure = storageFailure(error);
+      return NextResponse.json(failure, { status: failure.status });
     }
     const form = await request.formData();
     const files = form.getAll('file');
@@ -54,8 +57,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
         await uploadObject(uploaded, new Uint8Array(await file.arrayBuffer()));
       } catch (error) {
         const failure = storageFailure(error);
-        // Errors are logged by name only to avoid exposing credentials or object keys.
-        console.error('Attachment S3 upload failed:', error instanceof Error ? error.name : 'unknown');
+        console.error('Attachment S3 upload failed:', storageErrorDiagnostics(error));
         uploaded = undefined;
         return NextResponse.json({ code: failure.code, error: failure.error }, { status: failure.status });
       }

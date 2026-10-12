@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, type ReactNode } from 'react';
-import { AlertCircle, CalendarDays, Check, Circle, CircleAlert, Clock3, LoaderCircle, ShieldAlert, X } from 'lucide-react';
+import { cloneElement, isValidElement, useEffect, useId, type ReactNode, type ReactElement } from 'react';
+import { AlertCircle, AlertTriangle, CalendarDays, Check, Circle, CircleAlert, Clock3, LoaderCircle, ShieldAlert, X } from 'lucide-react';
 import type { Status } from '@/lib/types';
 
 export const statusInfo: Record<Status, { label: string; color: string; bg: string }> = {
@@ -35,14 +35,28 @@ export function ProgressBar({ value, color, height = 7 }: { value: number; color
 export function IconTile({ children, color = '#7769e8', size = 42 }: { children: ReactNode; color?: string; size?: number }) {
   return <span className="inline-flex shrink-0 items-center justify-center rounded-xl" style={{ color, background: `${color}17`, height:size, width:size }}>{children}</span>;
 }
-export function Dialog({ title, subtitle, onClose, children, wide = false }: { title: string; subtitle?: string; onClose: () => void; children: ReactNode; wide?: boolean }) {
+export type ConfirmationRequest = {
+  title: string;
+  description: string;
+  confirmLabel: string;
+  onConfirm: () => void;
+  destructive?: boolean;
+  alternative?: {label: string; onConfirm: () => void};
+};
+export type RequestConfirmation = (request: ConfirmationRequest) => void;
+
+/** Only the topmost dialog handles Escape. Backdrop clicks never dismiss a dialog. */
+export function Dialog({ title, subtitle, onClose, children, wide = false, active = true, layer = 100 }: { title: string; subtitle?: string; onClose: () => void; children: ReactNode; wide?: boolean; active?: boolean; layer?: number }) {
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    if (!active) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { e.stopImmediatePropagation(); e.preventDefault(); onClose(); }
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
-  return <div className="modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} role="presentation">
-    <section className="modal" style={{ maxWidth: wide ? 640 : 520 }} role="dialog" aria-modal="true" aria-label={title}>
+  }, [active, onClose]);
+  return <div className="modal-backdrop" role="presentation" aria-hidden={!active} inert={!active} style={{zIndex: layer, ...(layer >= 120 ? {background: 'rgba(14,15,29,.38)', backdropFilter: 'blur(2px)'} : {})}}>
+    <section className="modal" style={{ maxWidth: wide ? 640 : 520 }} role="dialog" aria-modal={active ? true : undefined} aria-label={title}>
       <div className="flex items-start justify-between gap-3 px-6 pt-6 pb-4">
         <div><h2 className="text-xl font-bold tracking-tight">{title}</h2>{subtitle && <p className="muted mt-1 text-sm">{subtitle}</p>}</div>
         <button className="icon-btn" onClick={onClose} aria-label="Close dialog"><X size={18}/></button>
@@ -51,8 +65,31 @@ export function Dialog({ title, subtitle, onClose, children, wide = false }: { t
     </section>
   </div>;
 }
+/** Accessible, application-styled confirmation instead of window.confirm(). */
+export function ConfirmDialog({ request, onClose, loading = false }: {request: ConfirmationRequest; onClose: () => void; loading?: boolean}) {
+  return <Dialog title={request.title} onClose={onClose} layer={140}>
+    <div className="px-6 pb-6">
+      <div className="mb-4 flex items-start gap-3 rounded-xl border p-4 hairline" style={{background: request.destructive ? 'rgba(239, 68, 68, 0.055)' : 'var(--surface-2)'}}>
+        <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${request.destructive ? 'bg-red-500/10 text-red-500' : 'bg-amber-500/10 text-amber-500'}`}><AlertTriangle size={20}/></span>
+        <p className="min-w-0 whitespace-pre-wrap break-words pt-0.5 text-sm leading-relaxed">{request.description}</p>
+      </div>
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <button type="button" autoFocus className="btn" disabled={loading} onClick={onClose}>Cancel</button>
+        {request.alternative && <button type="button" className="btn" disabled={loading} onClick={request.alternative.onConfirm}>{request.alternative.label}</button>}
+        <button type="button" disabled={loading} className={`btn ${request.destructive ? 'btn-danger-solid' : 'btn-primary'}`} onClick={request.onConfirm}>{loading ? <LoaderCircle size={16} className="animate-spin"/> : request.destructive ? <AlertTriangle size={16}/> : <Check size={16}/>} {request.confirmLabel}</button>
+      </div>
+    </div>
+  </Dialog>;
+}
+
 export function FormField({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
-  return <label className="block"><span className="field-label">{label}</span>{children}{hint && <span className="muted mt-1 block text-xs">{hint}</span>}</label>;
+  const generatedId = useId();
+  const native = isValidElement(children) && typeof children.type === 'string' && ['input', 'textarea', 'select'].includes(children.type);
+  const element = native ? children as ReactElement<{id?: string}> : null;
+  const fieldId = element?.props.id || generatedId;
+  const field = element ? cloneElement(element, {id: fieldId}) : children;
+  // Do not wrap custom searchable controls or button groups inside <label>.
+  return <div className="block">{native ? <label htmlFor={fieldId} className="field-label">{label}</label> : <span className="field-label">{label}</span>}{field}{hint && <span className="muted mt-1 block text-xs">{hint}</span>}</div>;
 }
 export function ModalFooter({ loading, onClose, submitLabel = 'Save changes' }: { loading: boolean; onClose: () => void; submitLabel?: string }) {
   return <div className="mt-6 flex items-center justify-end gap-2 border-t px-6 py-4 hairline" style={{ background: 'var(--surface-2)', borderRadius: '0 0 20px 20px' }}>

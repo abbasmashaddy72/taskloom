@@ -34,6 +34,10 @@ export async function getDb(): Promise<Db> {
         db.collection('subtasks').createIndex({ taskId: 1, position: 1 }),
         db.collection('attachments').createIndex({ taskId: 1, createdAt: -1 }),
         db.collection('attachments').createIndex({ taskId: 1, clientToken: 1 }, {unique: true, partialFilterExpression: {clientToken: {$type: 'string'}}}),
+        db.collection('task_links').createIndex({ key: 1 }, { unique: true }),
+        db.collection('project_task_links').createIndex({ key: 1 }, { unique: true }),
+        db.collection('project_task_links').createIndex({ targetProjectId: 1 }),
+        db.collection('import_batches').createIndex({ projectId: 1, createdAt: -1 }),
       ]);
     })().catch((error: unknown) => {
       global.taskloomIndexesPromise = undefined;

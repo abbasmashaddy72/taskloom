@@ -92,3 +92,120 @@ export function toMarkdown(project: ImportProject): string {
   }
   return `${lines.join('\n').trimEnd()}\n`;
 }
+
+/** Parse every checklist row as a single-level subtask (including nested checkbox rows). */
+export function parseChecklist(markdown: string): {title: string; status: Status; dueDate: string | null}[] {
+  if (!markdown.trim()) throw new Error('Paste a Markdown checklist first.');
+  if (markdown.length > 1_000_000) throw new Error('Markdown exceeds the 1 MB import limit.');
+  const rows: {title: string; status: Status; dueDate: string | null}[] = [];
+  for (const line of markdown.replace(/\r\n?/g, '\n').replace(/\t/g, '  ').split('\n')) {
+    const match = /^\s*[-*+]\s+(?:\[([ xX\-/!?])\]\s*)?(.+?)\s*$/.exec(line);
+    if (!match) continue;
+    const parsed = parseLine(match[2], match[1] ?? ' ');
+    if (!parsed.title) continue;
+    if (parsed.title.length > 160) throw new Error(`Subtask title exceeds 160 characters: ${parsed.title.slice(0, 40)}…`);
+    rows.push({title: parsed.title, status: parsed.status, dueDate: parsed.dueDate});
+    if (rows.length > 2000) throw new Error('At most 2,000 subtasks may be imported.');
+  }
+  if (!rows.length) throw new Error('No checklist items found. Use "- [ ] Subtask" lines.');
+  return rows;
+}
+
+/** Section-aware Markdown checklist: preserves headings, task status, and source details. */
+export type ChecklistItem = {
+  title: string;
+  description: string;
+  status: Status;
+  dueDate: string | null;
+  section: string | null;
+};
+export type ChecklistDocument = {
+  title: string;
+  intro: string;
+  notes: string;
+  sections: string[];
+  items: ChecklistItem[];
+};
+
+const stripInlineMarkdown = (text: string): string => clean(text
+  .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+  .replace(/\*\*(.*?)\*\*/g, '$1')
+  .replace(/__(.*?)__/g, '$1')
+  .replace(/`([^`]+)`/g, '$1'));
+
+const shortTitle = (text: string): string => {
+  if (text.length <= 160) return text;
+  const beginning = text.slice(0, 157);
+  const wordBoundary = beginning.lastIndexOf(' ');
+  return `${(wordBoundary > 90 ? beginning.slice(0, wordBoundary) : beginning).trimEnd()}…`;
+};
+
+export function parseChecklistDocument(markdown: string): ChecklistDocument {
+  if (!markdown.trim()) throw new Error('Paste a Markdown checklist first.');
+  if (markdown.length > 1_000_000) throw new Error('Markdown exceeds the 1 MB import limit.');
+  const document: ChecklistDocument = {title: '', intro: '', notes: '', sections: [], items: []};
+  let section: string | null = null;
+  let inNotes = false;
+  const introLines: string[] = [];
+  const noteLines: string[] = [];
+  for (const originalLine of markdown.replace(/\r\n?/g, '\n').split('\n')) {
+    const line = originalLine.replace(/\t/g, '  ');
+    const header = /^#\s+(.+?)\s*$/.exec(line);
+    if (header && !document.title) {
+      document.title = clean(header[1]);
+      continue;
+    }
+    const heading = /^##\s+(?:List:\s*)?(.+?)\s*$/i.exec(line);
+    if (heading) {
+      const headingName = clean(heading[1]);
+      inNotes = /^verification notes?$/i.test(headingName);
+      if (inNotes) { section = null; continue; }
+      if (document.sections.some(s => s.toLocaleLowerCase() === headingName.toLocaleLowerCase())) {
+        throw new Error(`Duplicate checklist heading: ${headingName}`);
+      }
+      if (headingName.length > 160) throw new Error('A checklist heading exceeds 160 characters.');
+      document.sections.push(headingName);
+      section = headingName;
+      continue;
+    }
+    if (inNotes) {
+      noteLines.push(line);
+      continue;
+    }
+    const bullet = /^\s*[-*+]\s+(?:\[([ xX\-/!?])\]\s*)?(.+?)\s*$/.exec(line);
+    if (bullet) {
+      const parsed = parseLine(bullet[2], bullet[1] ?? ' ');
+      const readable = stripInlineMarkdown(parsed.title);
+      if (!readable) continue;
+      document.items.push({
+        title: shortTitle(readable),
+        description: readable.length > 160 || parsed.title !== readable ? parsed.title : '',
+        status: parsed.status,
+        dueDate: parsed.dueDate,
+        section,
+      });
+      if (document.items.length > 2000) throw new Error('At most 2,000 subtasks may be imported.');
+      continue;
+    }
+    if (!section && line.trim()) introLines.push(line.trim());
+  }
+  document.intro = introLines.join('\n').trim();
+  document.notes = noteLines.join('\n').trim();
+  if (!document.items.length) throw new Error('No checklist items found. Use "- [ ] Subtask" lines.');
+  if (document.intro.length > 5000 || document.notes.length > 10000) throw new Error('Checklist introduction or verification notes exceed the size limit.');
+  return document;
+}
+
+export function checklistToMarkdown(document: ChecklistDocument): string {
+  const lines: string[] = [];
+  if (document.title) lines.push(`# ${document.title}`, '');
+  if (document.intro) lines.push(document.intro, '');
+  const mark = (item: ChecklistItem) => `- [${markFromStatus[item.status]}] ${item.description || item.title}${item.dueDate ? ` | due:${item.dueDate}` : ''}`;
+  for (const item of document.items.filter(item => item.section === null)) lines.push(mark(item));
+  for (const heading of document.sections) {
+    lines.push('', `## List: ${heading}`);
+    for (const item of document.items.filter(item => item.section === heading)) lines.push(mark(item));
+  }
+  if (document.notes) lines.push('', '## Verification Notes', '', document.notes);
+  return `${lines.join('\n').trim()}\n`;
+}

@@ -31,14 +31,27 @@ export type Task = {
   position: number;
   createdAt: string;
   updatedAt: string;
+  checklistTitle?: string;
+  checklistIntro?: string;
+  checklistNotes?: string;
 };
 export type Subtask = {
   id: string;
   taskId: string;
   projectId: string;
   title: string;
+  description?: string;
+  sectionId?: string | null;
   status: Status;
   dueDate: string | null;
+  position: number;
+  createdAt: string;
+};
+export type SubtaskSection = {
+  id: string;
+  taskId: string;
+  projectId: string;
+  title: string;
   position: number;
   createdAt: string;
 };
@@ -51,12 +64,40 @@ export type Attachment = {
   size: number;
   createdAt: string;
 };
+export type ProjectTaskLink = {
+  id: string;
+  taskId: string;
+  targetProjectId: string;
+  createdAt: string;
+};
+export type TaskLink = {
+  id: string;
+  firstTaskId: string;
+  secondTaskId: string;
+  createdAt: string;
+};
+export type ImportBatch = {
+  id: string;
+  projectId: string;
+  targetTaskId: string | null;
+  source: string;
+  mode: string;
+  status: 'preparing' | 'applied' | 'undoing' | 'undone' | 'needs_recovery' | 'expired';
+  createdAt: string;
+  lists: number;
+  tasks: number;
+  subtasks: number;
+};
 export type Snapshot = {
   projects: Project[];
   lists: TaskList[];
   tasks: Task[];
   subtasks: Subtask[];
+  subtaskSections: SubtaskSection[];
   attachments: Attachment[];
+  links: TaskLink[];
+  projectLinks: ProjectTaskLink[];
+  imports: ImportBatch[];
   attachmentsEnabled: boolean;
   databaseOnline: boolean;
   error?: string;

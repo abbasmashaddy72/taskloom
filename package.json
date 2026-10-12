@@ -8,8 +8,10 @@
     "start": "next start -H ${HOST:-127.0.0.1} -p ${PORT:-3000}",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "tsx --test tests/*.test.ts",
-    "seed": "tsx scripts/seed.ts"
+    "test": "tsx --test tests/*.test.ts && node --test tests/import-workflows.mjs",
+    "test:imports": "node --test tests/import-workflows.mjs",
+    "seed": "tsx scripts/seed.ts",
+    "s3:check": "node scripts/check-s3.mjs"
   },
   "dependencies": {
     "dotenv": "^16.6.1",
