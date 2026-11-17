@@ -6,6 +6,7 @@
     "dev": "next dev -H ${HOST:-127.0.0.1} -p ${PORT:-3000}",
     "build": "next build",
     "start": "next start -H ${HOST:-127.0.0.1} -p ${PORT:-3000}",
+    "prod": "npm run build && npm run start",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "tsx --test tests/*.test.ts && node --test tests/import-workflows.mjs tests/format-config.test.mjs",

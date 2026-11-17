@@ -62,6 +62,33 @@ See **[LERD_SETUP.md](LERD_SETUP.md)** for the complete Fish-compatible setup, e
 
 The `.env.local` connection string uses the Lerd MongoDB host port, root development credentials, and `authSource=admin`; it is never intended for production.
 
+## Troubleshooting Lerd 502 Bad Gateway
+
+A 502 can occur even while Next.js is running: nginx cannot reach its configured upstream. In the November 2026 incident, generated vhosts still used the LAN address `192.168.0.104`, while the working container-to-host gateway was `169.254.1.2`. Re-linking refreshed the upstream and app service binding. These addresses are diagnostic examples, not values to hardcode.
+
+Run these checks from this project directory (Bash or Fish):
+
+```sh
+lerd doctor
+systemctl --user status lerd-app-taskloom.service --no-pager
+journalctl --user -u lerd-app-taskloom.service -n 50 --no-pager
+curl --noproxy '*' --max-time 10 -I http://127.0.0.1:3000/
+curl --noproxy '*' --max-time 10 -I https://taskloom.test/
+```
+
+If direct HTTP works but HTTPS returns 502, inspect `proxy_pass` in `~/.local/share/lerd/nginx/conf.d/taskloom.test.conf` and recent `podman logs --since 5m lerd-nginx`. If the app binds a specific address instead of loopback, use that listening address for the direct check. If direct HTTP fails too, investigate the app journal and listening port first; re-linking does not fix application build or runtime errors.
+
+For a confirmed stale upstream or service binding, regenerate the configuration:
+
+```sh
+lerd link --yes --no-pull
+curl --noproxy '*' --max-time 15 --location --output /dev/null --write-out 'HTTP %{http_code}\n' https://taskloom.test/
+```
+
+Re-linking restarts this project's app service; wait for startup/build to finish before checking readiness. Do not manually edit generated nginx files or disable HTTPS certificate verification as a fix. Keep `.lerd.yaml` as the project's proxy configuration.
+
+Lerd's automatic gateway recovery depends on its watcher. Check `lerd autostart status` and `systemctl --user status lerd-watcher.service --no-pager`; enable login startup with `lerd autostart enable` if disabled. The watcher missed these stale configurations during the incident, so it does not guarantee recovery from every 502. No additional periodic repair loop is installed. Redact credentials, cookies and private URLs before sharing logs.
+
 ## Markdown format
 
 ```md
